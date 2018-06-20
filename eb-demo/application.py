@@ -21,7 +21,7 @@ class Kinesis():
 
 class UserTable():
     def __init__(self):
-        self.ad_path = 'http://midaisuk-techu-ad-web.s3-website-ap-northeast-1.amazonaws.com/ads/'
+        self.ad_path = ''
         self.default_ad_uri = 'ad0.jpeg'
         self.users = {
             1: {
@@ -51,7 +51,7 @@ class UserTable():
         if user_id in self.users:
             return self.ad_path + self.users[user_id]['ad_uri']
         else:
-            return self.default_ad_uri
+            return self.ad_path + self.default_ad_uri
             
     def get_userinfo_json(self, user_id):
         if user_id in self.users:
