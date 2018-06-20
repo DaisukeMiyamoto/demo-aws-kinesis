@@ -23,7 +23,8 @@ $ eb init       # Choose region, Python version (3.6 preferred), and SSH keypair
 $ eb create     # Set up environment and chose ELB (ALB preferred)
 ```
 
-## Benchmark
+## Benchmark with locust
+
 
 # Result Examples
 
