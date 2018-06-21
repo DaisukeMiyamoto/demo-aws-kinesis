@@ -1,9 +1,12 @@
 from flask import Flask, request
 import json
+import decimal
 import boto3
+from boto3.dynamodb.conditions import Key, Attr
 import sys
 from datetime import datetime
 from time import sleep
+from random import random
 
 
 class Kinesis():
@@ -15,7 +18,7 @@ class Kinesis():
         response = self.kinesis_client.put_record(
             StreamName=self.stream_name,
             Data=data,
-            PartitionKey=data
+            PartitionKey=str(random())
         )
         return response
 
@@ -35,9 +38,49 @@ class KinesisFirehose():
         return response
 
 
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, decimal.Decimal):
+            if o % 1 > 0:
+                return float(o)
+            else:
+                return int(o)
+        return super(DecimalEncoder, self).default(o)
+
+
+class DynamoDB():
+    def __init__(self, table_name, region='ap-northeast-1'):
+        self.ad_path = 'http://midaisuk-techu-ad-web.s3-website-ap-northeast-1.amazonaws.com/ads/'
+        self.default_ad_uri = 'ad0.jpeg'
+        dynamodb = boto3.resource('dynamodb', region_name=region)
+        self.table = dynamodb.Table(table_name)
+
+    def _get(self, user_id):
+        response = self.table.get_item(Key={'user_id':user_id})
+        if 'Item' in response:
+            return response['Item']
+        else:
+            return None
+
+    def get_ad_uri(self, user_id):
+        item = self._get(user_id)
+        if item and ('ad_uri' in item):
+            return self.ad_path + item['ad_uri']
+        else:
+            return self.ad_path + self.default_ad_uri
+
+    def get_userinfo_json(self, user_id):
+        item = self._get(user_id)
+        if not item:
+            item = {'Error': 'User ID Mismatch', 'ad_uri': self.default_ad_uri}
+
+        item.update({'timestamp': datetime.utcnow().isoformat()})
+        return json.dumps(item, cls=DecimalEncoder)
+    
+
 class UserTable():
     def __init__(self):
-        self.ad_path = ''
+        self.ad_path = 'http://midaisuk-techu-ad-web.s3-website-ap-northeast-1.amazonaws.com/ads/'
         self.default_ad_uri = 'ad0.jpeg'
         self.users = {
             1: {
@@ -86,8 +129,9 @@ class UserTable():
         return json.dumps(return_dict)
 
 
-# kinesis = Kinesis()
-kinesis = KinesisFirehose(stream_name='demo-aws-ad-firehose')
+kinesis = Kinesis('demo-aws-ad-stream')
+# kinesis = KinesisFirehose(stream_name='demo-aws-ad-firehose')
+dynamodb_user_table = DynamoDB('demo-aws-ad-usertable')
 user_table = UserTable()
 DEBUG_MODE = False
 application = Flask(__name__)
@@ -132,6 +176,15 @@ def get_ad_nowait():
     except Exception as e:
         return 'Error: %s' % (e.args)
 
+
+@application.route('/debug/dynamodb')
+def get_dynamodb():
+    try:
+        user_id = int(request.args.get('user_id', '0'))
+        return '%s\n' % (dynamodb_user_table.get_userinfo_json(user_id))
+    except Exception as e:
+        return 'Error: %s' % (e.args)
+    
 
 if __name__ == '__main__':
     application.run()
