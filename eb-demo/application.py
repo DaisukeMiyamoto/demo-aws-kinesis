@@ -72,7 +72,7 @@ class DynamoDB():
     def get_userinfo_json(self, user_id):
         item = self._get(user_id)
         if not item:
-            item = {'Error': 'User ID Mismatch', 'ad_uri': self.default_ad_uri}
+            item = {'Error': 'User ID Mismatch in DynamoDB', 'ad_uri': self.default_ad_uri}
 
         item.update({'timestamp': datetime.utcnow().isoformat()})
         return json.dumps(item, cls=DecimalEncoder)
@@ -131,7 +131,8 @@ class UserTable():
 
 kinesis = Kinesis('demo-aws-ad-stream')
 # kinesis = KinesisFirehose(stream_name='demo-aws-ad-firehose')
-dynamodb_user_table = DynamoDB('demo-aws-ad-usertable')
+# dynamodb_user_table = DynamoDB('demo-aws-ad-usertable')
+# user_table = dynamodb_user_table
 user_table = UserTable()
 DEBUG_MODE = False
 application = Flask(__name__)
