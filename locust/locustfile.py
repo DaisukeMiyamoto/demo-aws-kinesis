@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-$ ./start_slave.py -H http://hogehoge.com -c 100 -r 50
+$ ./start_locust.py -H http://hogehoge.com -c 100 -r 50
 """
 
 from locust import HttpLocust, TaskSet, task

@@ -25,6 +25,10 @@ $ eb create     # Set up environment and chose ELB (ALB preferred)
 
 ## Benchmark with locust
 
+```
+$ cd locust
+$ ./start_locust.py -H {TARGET_URL} -c 100 -r 50
+```
 
 # Result Examples
 
